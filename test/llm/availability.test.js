@@ -26,9 +26,12 @@ describe('LLM availability circuit breaker', () => {
     expect(healthCheck).toHaveBeenCalledTimes(3);
   });
 
-  it('counts generation failures and resets the consecutive count after success', () => {
+  it('does not clear generation failures on a health probe, but clears them after model success', async () => {
     const availability = createAvailability({ healthCheck: async () => true });
     availability.recordFailure();
+    expect(availability.snapshot().failures).toBe(1);
+    await availability.isAvailable();
+    expect(availability.snapshot().failures).toBe(1);
     availability.recordSuccess();
     availability.recordFailure();
 
@@ -38,6 +41,17 @@ describe('LLM availability circuit breaker', () => {
       failureThreshold: 2,
       cooldownMs: 10 * 60 * 1_000
     });
+  });
+
+  it('opens after two generation failures even when the gateway health probe succeeds', async () => {
+    const availability = createAvailability({ healthCheck: async () => true });
+
+    availability.recordFailure();
+    expect(await availability.isAvailable()).toBe(true);
+    availability.recordFailure();
+
+    expect(availability.snapshot().failures).toBe(2);
+    expect(availability.snapshot().isOpen).toBe(true);
   });
 
   it('shares concurrent health checks rather than sending duplicates', async () => {

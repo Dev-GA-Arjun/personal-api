@@ -33,13 +33,16 @@ export function createAvailability({
     }
 
     healthCheckInFlight = (async () => {
+      const probingAfterCooldown = openUntil > 0 && openUntil <= now();
       try {
         const healthy = await healthCheck();
         if (!healthy) {
           recordFailure();
           return false;
         }
-        recordSuccess();
+        if (probingAfterCooldown) {
+          recordSuccess();
+        }
         return true;
       } catch {
         recordFailure();
