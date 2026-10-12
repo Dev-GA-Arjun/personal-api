@@ -1,0 +1,32 @@
+{
+  "name": "personal-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest run",
+    "start": "node server/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dev-GA-Arjun/personal-api.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Dev-GA-Arjun/personal-api/issues"
+  },
+  "homepage": "https://github.com/Dev-GA-Arjun/personal-api#readme",
+  "dependencies": {
+    "dotenv": "^18.0.7",
+    "express": "^5.3.0",
+    "node-cron": "^4.6.0",
+    "node-notifier": "^6.0.0",
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "vitest": "^5.0.3"
+  }
+}
