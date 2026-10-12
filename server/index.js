@@ -5,11 +5,21 @@ import { authMiddleware } from './middleware/auth.js';
 import { loadRoutine, getCurrentWindow } from './engine/routine.js';
 import { appendLog, calculateWeeklyConsistency, getWindowStatus, shouldShowMinimumOnly } from './engine/storage.js';
 import { markPassedWindowsAsNoData, scheduleRoutineNotifications, stopRoutineNotifications } from './notifications.js';
+import { createLlmService } from './llm/service.js';
+import { createLlmRouter } from './routes/llm.js';
 
 const validStatuses = new Set(['done', 'minimum', 'skip', 'no_data']);
 
-export function createApp(runtimeConfig = config) {
+export function createApp(runtimeConfig = config, llmOverrides = {}) {
   const app = express();
+  let llmService;
+  const getLlmService = () => {
+    if (!llmService) {
+      llmService = createLlmService(runtimeConfig, llmOverrides);
+    }
+    return llmService;
+  };
+
   app.use(express.json());
 
   app.get('/health', (req, res) => {
@@ -137,6 +147,9 @@ export function createApp(runtimeConfig = config) {
     }
   });
 
+  app.use('/api', createLlmRouter(() => getLlmService().features));
+
+  app.locals.getLlmService = getLlmService;
   return app;
 }
 
@@ -146,11 +159,14 @@ export function startServer(port = config.port, host = '127.0.0.1', runtimeConfi
   const routine = loadRoutine(runtimeConfig.vaultPath);
   markPassedWindowsAsNoData(runtimeConfig.vaultPath, routine, new Date());
   scheduleRoutineNotifications(routine, runtimeConfig);
+  const llmService = app.locals.getLlmService();
+  llmService.start();
 
   const server = app.listen(port, host, () => {
     console.log(`Routine assistant listening on http://${host}:${port}`);
   });
 
+  server.once('close', () => llmService.stop());
   return server;
 }
 
