@@ -86,7 +86,7 @@ describe('LLM feature fallbacks and deferred work', () => {
     const dailyNote = readFileSync(join(context.vaultPath, 'Daily', '2026-10-12.md'), 'utf8');
     const events = readFileSync(context.eventPath, 'utf8');
     expect(nudge).toMatchObject({ cached: false, window: '09:00' });
-    expect(nudge.text).toContain('Read 1 page');
+    expect(nudge.text).toContain('Example minimum: step outside');
     expect(note).toMatchObject({ ok: true, date: '2026-10-12', queued: true });
     expect(dailyNote).toContain(privateNote);
     expect(review.consistency).toEqual({ completedDays: 0, totalDays: 7, percent: 0 });

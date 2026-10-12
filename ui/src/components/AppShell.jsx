@@ -1,7 +1,8 @@
 const navigation = [
   { route: 'now', label: 'Now', number: '01' },
   { route: 'today', label: 'Today', number: '02' },
-  { route: 'week', label: 'Week', number: '03' }
+  { route: 'week', label: 'Week', number: '03' },
+  { route: 'settings', label: 'Settings', number: '04' }
 ];
 
 export default function AppShell({ route, onLock, children }) {

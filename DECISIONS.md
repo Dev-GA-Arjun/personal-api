@@ -122,7 +122,7 @@ Why / tradeoff: Gives real values for METRICS.md and my resume, and helps debugg
 
 ## D15: Routine.yaml loader and window lookup logic
 
-Status: accepted
+Status: superseded by D19
 Context: Block 1 of TASK.md requires loading the routine.yaml from the vault and implementing window logic to determine the current check-in based on time.
 Options: 
 - Implement parsing and logic in the main server file
@@ -132,7 +132,7 @@ Decision: Created a dedicated module at server/engine/routine.js that handles lo
 Why / tradeoff: Separating concerns makes the code more testable and maintainable. The loader validates the YAML structure ensuring data integrity, and the window logic correctly identifies the active check-in window based on system time. Cost: Additional file to maintain, but this is justified by improved code organization.
 Revisit if: Requirements change for per-day window variations or if the validation logic needs to be extended.
 
-## D16: Notification cadence follows the fixed routine windows
+## D16: Notification cadence follows the five routine windows
 
 Status: accepted
 Context: Block 3 requires reminders at the same check-in times every day so the app can prompt me without needing a browser tab open.
@@ -140,9 +140,9 @@ Options:
 - Use a single long-running timer for all tasks
 - Use one cron job per check-in window
 - Use a poller that checks the clock in a loop
-Decision: Each routine window gets its own cron job using node-cron, scheduled at the same HH:mm as the template.
+Decision: Each routine window gets its own node-cron job. The routine template supplies default times; local check-in settings may change reminder times without changing window identities.
 Why / tradeoff: This keeps the schedule aligned with the weekly template and makes it easy to test and reason about. Cost: one scheduler per window, but the reliability and clarity are worth it.
-Revisit if: I later allow editable check-in times or per-day variations.
+Revisit if: I later need different schedules for different days.
 
 ## D17: Startup recovery marks passed windows as no_data automatically
 
@@ -155,6 +155,30 @@ Options:
 Decision: On server startup, any window from today that has already passed and has no log is created as no_data instead of being treated as a failure.
 Why / tradeoff: This matches the project rule that unlogged windows are not counted as failures, and it keeps the current window prompt clean. Cost: startup gets a little more logic, but it prevents false guilt and stale red flags.
 Revisit if: I later want a stricter missed-task policy for a different routine type.
+
+## D18: Browser UI stays simple and local instead of a full React app
+
+Status: superseded by D19
+Context: Block 4 is about fast check-ins and a local browser experience, not about building a large frontend framework.
+Options:
+- Full React/Vite app with routing and builds
+- A single-page HTML app served by Express
+- A plain multi-page HTML UI with lightweight JS
+Decision: Keep the interface as plain static HTML pages served by Express, with the same JSON API behind bearer auth.
+Why / tradeoff: The workflow is small and local, so a lightweight browser UI is faster to build, easier to debug, and much more likely to stay under the 15-second check-in target. Cost: less frontend sophistication, but much lower complexity and less risk of dragging the MVP off track.
+Revisit if: I later want a richer UI, more pages, or a more polished app experience.
+
+## D19: Vite + React UI uses native hash navigation and a tab-scoped API token
+
+Status: accepted
+Context: The UI now needs Now, Today, and Week views with an explicit token prompt while preserving local-only operation and the sub-15-second check-in goal.
+Options:
+- Add a router and persistent token storage
+- Use browser-native hash routes and keep the token in session storage
+Decision: Build a Vite + React single-page UI in `ui/`, use native hash routes without a router library, and keep the entered bearer token in `sessionStorage` for the current tab only. Express serves the built assets; the token is never injected into HTML. `npm start` builds the UI before Express starts.
+Why / tradeoff: React supports the three interactive views while native routing and tab-scoped storage avoid extra routing/state dependencies and avoid persisting the token across browser sessions. Building at startup keeps the ignored `ui/dist` output fresh for the local app and its scheduled launch. The Now view keeps the three status actions immediately available. Cost: each new tab or browser session asks for the token again, and startup includes a short build step.
+Security and privacy: All data requests use the existing authenticated `/api/*` routes. The UI remains served locally and loads no external fonts, scripts, or services.
+Revisit if: The UI grows beyond these three views or a different token-persistence model is explicitly needed.
 
 ## D20: Pre-generate and cache a week of nudges
 
@@ -178,4 +202,12 @@ Status: proposed
 Context: The desktop model is often offline, and queued work must survive a server restart.
 Options: keep requests in memory; use a database; persist each job as an ignored JSON file
 Decision: Store idempotent jobs as JSON files under the gitignored `queue/` directory. Process only when the model is available and cap each job at three attempts.
+Why / tradeoff:
+
+## D23: Keep editable reminder times separate from routine window identities
+
+Status: proposed
+Context: Block 4 adds editable reminder times, while daily-note logs and routine tasks are keyed to the original check-in windows.
+Options: rename routine windows and historical log keys; store the reminder schedule separately and keep stable window identities
+Decision: Persist the five reminder times separately in `Routine/check-in-times.json`. Keep each task bound to its original chronological window identity so existing notes and status calculations are not rewritten when reminder times change.
 Why / tradeoff:

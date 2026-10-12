@@ -68,7 +68,7 @@ export default function NowPage({ token, onUnauthorized }) {
       {data?.window ? (
         <article className="current-task">
           <div className="current-task__meta">
-            <span className="window-time">{data.window}</span>
+            <span className="window-time">{data.scheduledTime || data.window}</span>
             <span className={`status-label status-label--${data.status || 'no_data'}`}>{(data.status || 'no_data').replace('_', ' ')}</span>
           </div>
           <h2 className="task-title">{data.task}</h2>

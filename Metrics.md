@@ -1,3 +1,8 @@
 Metric | How measured | Value | Date
 Block 1 Core Engine Completed | Tests pass and script simulates full day | 20/20 unit tests passing, full day simulation passed | 2026-10-12
-Block 5 Private LLM Layer | Production build and full tests | Build passed; 52/52 tests passed; model-off API routes under 100 ms | 2026-10-12 (desktop model not tested)
+Block 2 API and Auth Completed | Local curl/HTTP validation against loopback endpoints | 5 protected endpoints responding successfully on 127.0.0.1 with bearer auth; 20/20 unit tests passing | 2026-10-12
+Block 3 Notifications and Auto-start Completed | Automated tests for startup no-data recovery and cron scheduling; startup smoke test | 22/22 tests passing; server startup/shutdown smoke test passed on loopback | 2026-10-12
+Block 4 Browser UI Completed | Browser pages served by Express and JSON API remains available; UI smoke tests | 3 UI pages rendered successfully; 24/24 tests passing after UI validation | 2026-10-12
+Block 5 LLM Layer Implementation | Production build and full Vitest suite; fake OmniRoute client and model-off API timing assertions | Production build passed; 52/52 tests passed; all four model-off LLM endpoints returned in under 100 ms; real desktop model not tested | 2026-10-12
+Block 4 Settings | Production build and full Vitest suite; settings API save, history-preservation, and cron schedule tests | Build passed; 60/60 tests passed across 11 files; edited reminder times persist and reschedule notifications without changing routine.yaml or historical log keys | 2026-10-12
+Block 6 Documentation and privacy | Production build, full Vitest suite, tracked-file privacy check, and screenshot review | Build passed; 61/61 tests passed across 11 files; only synthetic sample-vault data is tracked; Now and Settings screenshots captured; toast screenshot pending | 2026-10-12

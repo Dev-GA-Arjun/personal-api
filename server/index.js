@@ -1,8 +1,10 @@
 import express from 'express';
-import { pathToFileURL } from 'url';
+import { dirname, join } from 'path';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { config } from './config.js';
 import { authMiddleware } from './middleware/auth.js';
 import { loadRoutine, getCurrentWindow } from './engine/routine.js';
+import { loadCheckInTimes, saveCheckInTimes } from './engine/settings.js';
 import { appendLog, calculateWeeklyConsistency, getWindowStatus, shouldShowMinimumOnly } from './engine/storage.js';
 import { markPassedWindowsAsNoData, scheduleRoutineNotifications, stopRoutineNotifications } from './notifications.js';
 import { createLlmService } from './llm/service.js';
@@ -12,6 +14,7 @@ const validStatuses = new Set(['done', 'minimum', 'skip', 'no_data']);
 
 export function createApp(runtimeConfig = config, llmOverrides = {}) {
   const app = express();
+  let notificationRuntimeConfig = null;
   let llmService;
   const getLlmService = () => {
     if (!llmService) {
@@ -19,25 +22,58 @@ export function createApp(runtimeConfig = config, llmOverrides = {}) {
     }
     return llmService;
   };
+  const uiDistPath = runtimeConfig.uiDistPath || join(
+    dirname(fileURLToPath(import.meta.url)),
+    '..',
+    'ui',
+    'dist'
+  );
 
   app.use(express.json());
+  app.use(authMiddleware(runtimeConfig));
 
   app.get('/health', (req, res) => {
     res.json({ ok: true, time: new Date().toISOString() });
   });
 
-  app.use(authMiddleware(runtimeConfig));
-
-  app.get('/now', (req, res) => {
+  app.get('/api/settings', (req, res) => {
     try {
       const routine = loadRoutine(runtimeConfig.vaultPath);
+      const checkIns = loadCheckInTimes(runtimeConfig.vaultPath, routine);
+      return res.json({ ok: true, checkIns });
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put('/api/settings', (req, res) => {
+    try {
+      const routine = loadRoutine(runtimeConfig.vaultPath);
+      const checkIns = saveCheckInTimes(runtimeConfig.vaultPath, routine, req.body?.checkIns);
+      if (notificationRuntimeConfig) {
+        scheduleRoutineNotifications(routine, notificationRuntimeConfig, checkIns);
+      }
+      return res.json({ ok: true, checkIns });
+    } catch (error) {
+      if (error instanceof RangeError) {
+        return res.status(400).json({ error: error.message });
+      }
+      return res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/now', (req, res) => {
+    try {
+      const routine = loadRoutine(runtimeConfig.vaultPath);
+      const checkIns = loadCheckInTimes(runtimeConfig.vaultPath, routine);
       const today = new Date();
-      const window = getCurrentWindow(routine, today);
+      const window = getCurrentWindow(routine, today, checkIns);
 
       if (!window) {
         return res.json({
           ok: true,
           window: null,
+          scheduledTime: null,
           task: null,
           minimumVersion: null,
           minimumOnly: false,
@@ -52,6 +88,7 @@ export function createApp(runtimeConfig = config, llmOverrides = {}) {
       return res.json({
         ok: true,
         window: window.time,
+        scheduledTime: window.scheduledTime,
         task,
         minimumVersion: window.minimum,
         minimumOnly,
@@ -63,7 +100,7 @@ export function createApp(runtimeConfig = config, llmOverrides = {}) {
     }
   });
 
-  app.post('/log', (req, res) => {
+  app.post('/api/log', (req, res) => {
     try {
       const { window: windowTime, status, note = '' } = req.body ?? {};
 
@@ -94,19 +131,22 @@ export function createApp(runtimeConfig = config, llmOverrides = {}) {
     }
   });
 
-  app.get('/today', (req, res) => {
+  app.get('/api/today', (req, res) => {
     try {
       const routine = loadRoutine(runtimeConfig.vaultPath);
+      const checkIns = loadCheckInTimes(runtimeConfig.vaultPath, routine);
       const today = new Date();
 
-      const windows = routine.check_ins.map((time) => {
-        const window = routine.windows[time];
-        const status = getWindowStatus(runtimeConfig.vaultPath, today, time);
-        const minimumOnly = shouldShowMinimumOnly(runtimeConfig.vaultPath, time, today);
+      const windows = routine.check_ins.map((windowId, index) => {
+        const scheduledTime = checkIns[index];
+        const window = routine.windows[windowId];
+        const status = getWindowStatus(runtimeConfig.vaultPath, today, windowId);
+        const minimumOnly = shouldShowMinimumOnly(runtimeConfig.vaultPath, windowId, today);
         const task = minimumOnly ? window.minimum : window.full;
 
         return {
-          time,
+          time: scheduledTime,
+          window: windowId,
           status,
           task,
           minimumVersion: window.minimum,
@@ -125,22 +165,27 @@ export function createApp(runtimeConfig = config, llmOverrides = {}) {
     }
   });
 
-  app.get('/week', (req, res) => {
+  app.get('/api/week', (req, res) => {
     try {
       const routine = loadRoutine(runtimeConfig.vaultPath);
+      const checkIns = loadCheckInTimes(runtimeConfig.vaultPath, routine);
       const today = new Date();
       const consistency = calculateWeeklyConsistency(runtimeConfig.vaultPath, today);
+      const template = Object.fromEntries(checkIns.map((time, index) => [
+        time,
+        routine.windows[routine.check_ins[index]]
+      ]));
 
       return res.json({
         ok: true,
         theme: routine.week_theme,
-        checkIns: routine.check_ins,
+        checkIns,
         days: Object.entries(routine.days).map(([day, meta]) => ({
           day,
           focus: meta.focus
         })),
         consistency,
-        template: routine.windows
+        template
       });
     } catch (error) {
       return res.status(500).json({ error: error.message });
@@ -148,7 +193,16 @@ export function createApp(runtimeConfig = config, llmOverrides = {}) {
   });
 
   app.use('/api', createLlmRouter(() => getLlmService().features));
+  app.use(express.static(uiDistPath, { index: 'index.html' }));
 
+  app.locals.activateNotificationSchedule = (activeConfig, checkIns) => {
+    notificationRuntimeConfig = activeConfig;
+    scheduleRoutineNotifications(loadRoutine(activeConfig.vaultPath), activeConfig, checkIns);
+  };
+  app.locals.deactivateNotificationSchedule = () => {
+    notificationRuntimeConfig = null;
+    stopRoutineNotifications();
+  };
   app.locals.getLlmService = getLlmService;
   return app;
 }
@@ -157,8 +211,9 @@ export const app = createApp();
 
 export function startServer(port = config.port, host = '127.0.0.1', runtimeConfig = config) {
   const routine = loadRoutine(runtimeConfig.vaultPath);
-  markPassedWindowsAsNoData(runtimeConfig.vaultPath, routine, new Date());
-  scheduleRoutineNotifications(routine, runtimeConfig);
+  const checkIns = loadCheckInTimes(runtimeConfig.vaultPath, routine);
+  markPassedWindowsAsNoData(runtimeConfig.vaultPath, routine, new Date(), checkIns);
+  app.locals.activateNotificationSchedule(runtimeConfig, checkIns);
   const llmService = app.locals.getLlmService();
   llmService.start();
 
@@ -166,15 +221,19 @@ export function startServer(port = config.port, host = '127.0.0.1', runtimeConfi
     console.log(`Routine assistant listening on http://${host}:${port}`);
   });
 
-  server.once('close', () => llmService.stop());
+  server.once('close', () => {
+    llmService.stop();
+    app.locals.deactivateNotificationSchedule();
+  });
   return server;
 }
 
 export function shutdownServer(server) {
   if (server && typeof server.close === 'function') {
     server.close();
+  } else {
+    app.locals.deactivateNotificationSchedule();
   }
-  stopRoutineNotifications();
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

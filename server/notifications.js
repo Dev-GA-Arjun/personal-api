@@ -19,7 +19,7 @@ export function stopRoutineNotifications() {
   scheduledJobs = [];
 }
 
-export function markPassedWindowsAsNoData(vaultPath, routine, now = new Date()) {
+export function markPassedWindowsAsNoData(vaultPath, routine, now = new Date(), scheduledTimes = routine?.check_ins) {
   if (!vaultPath || !routine || !Array.isArray(routine.check_ins)) {
     return [];
   }
@@ -30,15 +30,22 @@ export function markPassedWindowsAsNoData(vaultPath, routine, now = new Date()) 
   );
 
   const updated = [];
-  for (const time of [...routine.check_ins].sort((a, b) => timeToMinutes(a) - timeToMinutes(b))) {
-    if (timeToMinutes(time) > currentMinutes) {
+  const slots = scheduledTimes
+    .map((scheduledTime, index) => ({
+      scheduledTime,
+      routineTime: routine.check_ins[index]
+    }))
+    .sort((a, b) => timeToMinutes(a.scheduledTime) - timeToMinutes(b.scheduledTime));
+
+  for (const { scheduledTime, routineTime } of slots) {
+    if (timeToMinutes(scheduledTime) > currentMinutes) {
       break;
     }
 
-    const existingStatus = getWindowStatus(vaultPath, today, time);
+    const existingStatus = getWindowStatus(vaultPath, today, routineTime);
     if (existingStatus === 'no_data') {
-      appendLog(vaultPath, today, time, 'no_data');
-      updated.push(time);
+      appendLog(vaultPath, today, routineTime, 'no_data');
+      updated.push(routineTime);
     }
   }
 
@@ -46,7 +53,7 @@ export function markPassedWindowsAsNoData(vaultPath, routine, now = new Date()) 
 }
 
 export function openRoutinePage(url) {
-  const target = typeof url === 'string' && url ? url : 'http://127.0.0.1:3737/now';
+  const target = typeof url === 'string' && url ? url : 'http://127.0.0.1:3737/#/now';
 
   try {
     if (process.platform === 'win32') {
@@ -65,30 +72,31 @@ export function openRoutinePage(url) {
   }
 }
 
-export function scheduleRoutineNotifications(routine, runtimeConfig) {
+export function scheduleRoutineNotifications(routine, runtimeConfig, scheduledTimes = routine?.check_ins) {
   if (!routine || !Array.isArray(routine.check_ins) || !runtimeConfig) {
     return [];
   }
 
   stopRoutineNotifications();
 
-  const jobs = routine.check_ins.map((time) => {
-    const [hours, minutes] = String(time).split(':').map(Number);
+  const jobs = scheduledTimes.map((scheduledTime, index) => {
+    const routineTime = routine.check_ins[index];
+    const [hours, minutes] = String(scheduledTime).split(':').map(Number);
     const cronExpression = `${minutes} ${hours} * * *`;
-    const targetUrl = `http://127.0.0.1:${runtimeConfig.port}/now`;
+    const targetUrl = `http://127.0.0.1:${runtimeConfig.port}/#/now`;
 
     return cron.schedule(
       cronExpression,
       () => {
         const now = new Date();
-        const windowData = routine.windows[time];
-        const minimumOnly = shouldShowMinimumOnly(runtimeConfig.vaultPath, time, now);
+        const windowData = routine.windows[routineTime];
+        const minimumOnly = shouldShowMinimumOnly(runtimeConfig.vaultPath, routineTime, now);
         const task = minimumOnly ? windowData.minimum : windowData.full;
 
         try {
           notifier.notify(
             {
-              title: `Routine check-in • ${time}`,
+              title: `Routine check-in • ${scheduledTime}`,
               message: task,
               wait: true,
               open: targetUrl

@@ -54,6 +54,16 @@ describe('notification startup and scheduling', () => {
     ]);
   });
 
+  it('uses edited reminder times while recording no_data against stable routine windows', () => {
+    const today = new Date(2026, 9, 12, 13, 30);
+    const schedule = ['08:00', '10:00', '14:00', '18:00', '22:00'];
+    const updated = markPassedWindowsAsNoData(testVaultPath, routine, today, schedule);
+
+    expect(updated).toEqual(['09:00', '12:00']);
+    const logs = getLogsForDate(testVaultPath, today);
+    expect(logs.map(({ time }) => time)).toEqual(['09:00', '12:00']);
+  });
+
   it('creates one scheduled cron job for each check-in time', () => {
     const jobs = scheduleRoutineNotifications(routine, {
       port: 3737,
@@ -62,5 +72,22 @@ describe('notification startup and scheduling', () => {
 
     expect(jobs).toHaveLength(routine.check_ins.length);
     jobs.forEach((job) => expect(job).toBeDefined());
+    jobs.forEach((job) => expect(job.cronExpression).toBeTruthy());
+  });
+
+  it('schedules notification jobs at the edited reminder times', () => {
+    const schedule = ['08:30', '11:45', '14:30', '17:30', '20:30'];
+    const jobs = scheduleRoutineNotifications(routine, {
+      port: 3737,
+      vaultPath: testVaultPath
+    }, schedule);
+
+    expect(jobs.map((job) => job.cronExpression)).toEqual([
+      '30 8 * * *',
+      '45 11 * * *',
+      '30 14 * * *',
+      '30 17 * * *',
+      '30 20 * * *'
+    ]);
   });
 });

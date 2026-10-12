@@ -25,11 +25,11 @@ console.log(`📅 Simulating: ${simulationDate.toDateString()}\n`);
 
 // Simulate check-ins throughout the day
 const checkInTimes = [
-  { time: new Date(2026, 9, 12, 9, 0), status: 'done', note: 'Morning routine completed' },
-  { time: new Date(2026, 9, 12, 12, 0), status: 'minimum', note: 'Just water, busy meeting' },
-  { time: new Date(2026, 9, 12, 15, 0), status: 'done', note: 'Notebook entry added' },
-  { time: new Date(2026, 9, 12, 18, 0), status: 'skip', note: 'Train delayed, no time' },
-  { time: new Date(2026, 9, 12, 21, 0), status: 'minimum', note: '2 exercises only' }
+  { time: new Date(2026, 9, 12, 9, 0), status: 'done', note: 'Synthetic example A' },
+  { time: new Date(2026, 9, 12, 12, 0), status: 'minimum', note: 'Synthetic example B' },
+  { time: new Date(2026, 9, 12, 15, 0), status: 'done', note: 'Synthetic example C' },
+  { time: new Date(2026, 9, 12, 18, 0), status: 'skip', note: 'Synthetic example D' },
+  { time: new Date(2026, 9, 12, 21, 0), status: 'minimum', note: 'Synthetic example E' }
 ];
 
 console.log('⏰ Simulating check-ins:\n');

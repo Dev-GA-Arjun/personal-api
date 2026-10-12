@@ -107,27 +107,31 @@ function validateRoutine(routine) {
  * @param {Date|number} date - Date object or timestamp
  * @returns {Object|null} The window object with full and minimum tasks, or null if before first check-in
  */
-export function getCurrentWindow(routine, date) {
+export function getCurrentWindow(routine, date, scheduledTimes = routine.check_ins) {
   const now = date instanceof Date ? date : new Date(date);
   const hours = now.getHours();
   const minutes = now.getMinutes();
   const totalMinutes = hours * 60 + minutes;
 
-  // Sort check-ins by time to ensure proper lookup
-  const sortedCheckIns = [...routine.check_ins].sort((a, b) => {
-    const [aHours, aMinutes] = a.split(':').map(Number);
-    const [bHours, bMinutes] = b.split(':').map(Number);
-    return aHours * 60 + aMinutes - (bHours * 60 + bMinutes);
-  });
+  const sortedSlots = scheduledTimes
+    .map((scheduledTime, index) => ({
+      scheduledTime,
+      routineTime: routine.check_ins[index]
+    }))
+    .sort((a, b) => {
+      const [aHours, aMinutes] = a.scheduledTime.split(':').map(Number);
+      const [bHours, bMinutes] = b.scheduledTime.split(':').map(Number);
+      return aHours * 60 + aMinutes - (bHours * 60 + bMinutes);
+    });
 
   // Find the most recent check-in time that is <= current time
-  let currentWindowTime = null;
-  for (const time of sortedCheckIns) {
-    const [timeHours, timeMinutes] = time.split(':').map(Number);
+  let currentSlot = null;
+  for (const slot of sortedSlots) {
+    const [timeHours, timeMinutes] = slot.scheduledTime.split(':').map(Number);
     const timeTotalMinutes = timeHours * 60 + timeMinutes;
 
     if (timeTotalMinutes <= totalMinutes) {
-      currentWindowTime = time;
+      currentSlot = slot;
     } else {
       // Since sorted, we can break early
       break;
@@ -135,14 +139,15 @@ export function getCurrentWindow(routine, date) {
   }
 
   // If no window time found (before first check-in), return null
-  if (currentWindowTime === null) {
+  if (currentSlot === null) {
     return null;
   }
 
   // Return the window object for this time
   return {
-    full: routine.windows[currentWindowTime].full,
-    minimum: routine.windows[currentWindowTime].minimum,
-    time: currentWindowTime
+    full: routine.windows[currentSlot.routineTime].full,
+    minimum: routine.windows[currentSlot.routineTime].minimum,
+    time: currentSlot.routineTime,
+    scheduledTime: currentSlot.scheduledTime
   };
 }

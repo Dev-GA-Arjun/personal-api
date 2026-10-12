@@ -5,9 +5,10 @@ import TokenGate from './components/TokenGate.jsx';
 import NowPage from './pages/NowPage.jsx';
 import TodayPage from './pages/TodayPage.jsx';
 import WeekPage from './pages/WeekPage.jsx';
+import SettingsPage from './pages/SettingsPage.jsx';
 
 const tokenStorageKey = 'routine-api-token';
-const routes = new Set(['now', 'today', 'week']);
+const routes = new Set(['now', 'today', 'week', 'settings']);
 
 function readRoute() {
   const route = window.location.hash.replace(/^#\/?/, '').split('/')[0];
@@ -59,7 +60,8 @@ export default function App() {
   const page = {
     now: <NowPage token={token} onUnauthorized={handleUnauthorized} />,
     today: <TodayPage token={token} onUnauthorized={handleUnauthorized} />,
-    week: <WeekPage token={token} onUnauthorized={handleUnauthorized} />
+    week: <WeekPage token={token} onUnauthorized={handleUnauthorized} />,
+    settings: <SettingsPage token={token} onUnauthorized={handleUnauthorized} />
   }[route];
 
   return (

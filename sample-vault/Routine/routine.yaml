@@ -1,26 +1,26 @@
-week_theme: "Read Tamil prose in the train"
+week_theme: "Example week: move a little and read"
 check_ins: ["09:00", "12:00", "15:00", "18:00", "21:00"]
 days:
-  mon: { focus: legs }
-  tue: { focus: push }
-  wed: { focus: rest-walk }
-  thu: { focus: pull }
-  fri: { focus: core }
-  sat: { focus: shoulders-arms }
+  mon: { focus: example A }
+  tue: { focus: example B }
+  wed: { focus: rest }
+  thu: { focus: example C }
+  fri: { focus: example D }
+  sat: { focus: example E }
   sun: { focus: rest }
 windows:
   "09:00":
-    full: "Morning stack done and read Tamil in the morning train"
-    minimum: "Read 1 page"
+    full: "Example: take a short morning walk and read"
+    minimum: "Example minimum: step outside"
   "12:00":
-    full: "Midday reset: water, stretch 2 minutes"
-    minimum: "Drink water"
+    full: "Example: pause and stretch for two minutes"
+    minimum: "Example minimum: stretch once"
   "15:00":
-    full: "No reels since morning; notebook idea jotted"
-    minimum: "One line in the notebook"
+    full: "Example: write one idea in a notebook"
+    minimum: "Example minimum: write one word"
   "18:00":
-    full: "Read Tamil on the train home"
-    minimum: "Read 1 page"
+    full: "Example: read a few pages"
+    minimum: "Example minimum: read one page"
   "21:00":
-    full: "Dumbbell session for today's focus plus night stack"
-    minimum: "2 dumbbell moves"
+    full: "Example: do a short strength routine"
+    minimum: "Example minimum: do one movement"

@@ -48,7 +48,7 @@ A private weekly-routine assistant on my Windows laptop.
 - [x] Unit tests for window lookup, never-miss-twice, and consistency
       Done when: tests pass and a script can simulate a full day.
 
-Break 10:30 to 10:45. Away from the screen.
+Take a short break away from the screen.
 
 ### Block 2: API and auth
 
@@ -60,27 +60,29 @@ Break 10:30 to 10:45. Away from the screen.
 - [x] `GET /health`
       Done when: all endpoints work with curl or a REST client.
 
-Lunch and 10 minute dumbbell, 12:30 to 1:30. No screen.
+Take a lunch break and step away from the screen.
 
 ### Block 3: Notifications and auto-start
 
-- [x] node-cron at 09:00, 12:00, 15:00, 18:00, 21:00
-- [x] node-notifier toast with `wait: true`; click opens `http://localhost:PORT/now`
+- [x] node-cron uses the five configured check-in times (defaults: 09:00, 12:00, 15:00, 18:00, 21:00)
+- [x] node-notifier toast with `wait: true`; click opens `http://127.0.0.1:PORT/#/now`
 - [x] Turn off Focus Assist or allow notifications, then test with a 1 minute cron
 - [x] On server start or wake, mark windows passed without a log as `no_data` and prompt only for the current window
-- [x] Task Scheduler entry: at log on, run `node server/index.js` hidden, run on battery
+- [x] Task Scheduler entry: `Personal API` runs `npm start` from the project root at logon, hidden, and on battery
       Done when: a test toast appears and the click opens the page.
 
 ### Block 4: React UI
 
 Keep it plain. Target under 15 seconds per check-in.
 
-- [ ] Now page: task, minimum version, Done / Minimum / Skip, optional note
-- [ ] Today page: five windows with status
-- [ ] Week page: theme, muscle group for each day, weekly consistency
-- [ ] Settings: edit check-in times (optional, cut if late)
-- [ ] Express serves the built UI
-      Done when: I can log all five windows from the UI.
+- [x] Vite + React UI served from the Express production build
+- [x] `npm start` builds the UI before Express starts
+- [x] Native hash routes for Now, Today, and Week; token prompt for local API access
+- [x] Now page: task, minimum version, Done / Minimum / Skip, optional note
+- [x] Today page: five windows with status
+- [x] Week page: theme, muscle group for each day, weekly consistency
+- [x] Settings: edit and save all five notification times; task order and historical logs stay unchanged
+      Done when: I can log all five windows, see each status in Today, and change notification times in Settings.
 
 ### Block 5: LLM layer
 
@@ -97,51 +99,52 @@ Dinner, dumbbell, rest 6:30 to 7:30.
 
 ### Block 6: Polish for resume
 
-- [ ] README: what, why, setup on Windows, architecture diagram (Mermaid), tradeoffs
-- [ ] Sample vault with fake notes; confirm no personal data in git
-- [ ] Tests green, a short test section in the README
-- [ ] Clean commits and push
-- [ ] Screenshot of the UI and a toast for the README
+- [x] README: what, why, setup on Windows, architecture diagram (Mermaid), tradeoffs
+- [x] Sample vault contains unmistakably synthetic routine and log examples; tracked-file privacy check completed
+- [x] Tests green, a short test section in the README
+- [x] Clean commits and push
+- [x] UI screenshots captured from the synthetic demo for the README
+- [ ] Windows toast screenshot captured for the README (capture did not show a toast)
 
 ### Block 7: Dry run
 
 - [ ] Install auto-start, reboot, confirm the server comes up
 - [ ] Set tomorrow's real template and load it
 - [ ] Verify the 9am notification is scheduled for Monday
-- [ ] Stop. Phone away by 10:30, lights out by 11:00.
+- [ ] Stop screen use and prepare for sleep.
 
-## routine.yaml starting point (edit to taste)
+## synthetic routine.yaml example
 
 ```yaml
-week_theme: "Read Tamil prose in the train"
+week_theme: "Example week: move a little and read"
 check_ins: ["09:00", "12:00", "15:00", "18:00", "21:00"]
 days:
-  mon: { focus: legs }
-  tue: { focus: push }
-  wed: { focus: rest-walk }
-  thu: { focus: pull }
-  fri: { focus: core }
-  sat: { focus: shoulders-arms }
+  mon: { focus: example A }
+  tue: { focus: example B }
+  wed: { focus: rest }
+  thu: { focus: example C }
+  fri: { focus: example D }
+  sat: { focus: example E }
   sun: { focus: rest }
 windows:
   "09:00":
-    full: "Morning stack done and read Tamil in the morning train"
-    minimum: "Read 1 page"
+    full: "Example: take a short morning walk and read"
+    minimum: "Example minimum: step outside"
   "12:00":
-    full: "Midday reset: water, stretch 2 minutes"
-    minimum: "Drink water"
+    full: "Example: pause and stretch for two minutes"
+    minimum: "Example minimum: stretch once"
   "15:00":
-    full: "No reels since morning; notebook idea jotted"
-    minimum: "One line in the notebook"
+    full: "Example: write one idea in a notebook"
+    minimum: "Example minimum: write one word"
   "18:00":
-    full: "Read Tamil on the train home"
-    minimum: "Read 1 page"
+    full: "Example: read a few pages"
+    minimum: "Example minimum: read one page"
   "21:00":
-    full: "Dumbbell session for today's focus plus night stack"
-    minimum: "2 dumbbell moves"
+    full: "Example: do a short strength routine"
+    minimum: "Example minimum: do one movement"
 ```
 
-The 12:00 and 15:00 tasks are placeholders. Replace with what I actually want.
+Replace the synthetic example with your own routine in your vault; do not commit private routine details.
 
 ## MVP line
 

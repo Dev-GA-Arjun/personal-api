@@ -205,6 +205,16 @@ describe('getCurrentWindow', () => {
     expect(window.full).toBe("Full night");
   });
 
+  it('uses edited schedule times while preserving the routine window identity', () => {
+    const schedule = ["08:30", "11:45", "14:30", "17:30", "20:30"];
+    const date = new Date(2026, 9, 12, 12, 0);
+    const window = getCurrentWindow(mockRoutine, date, schedule);
+
+    expect(window.time).toBe("12:00");
+    expect(window.scheduledTime).toBe("11:45");
+    expect(window.full).toBe("Full noon");
+  });
+
   it('should handle unsorted check_ins by sorting internally', () => {
     const routineWithUnsortedTimes = {
       ...mockRoutine,

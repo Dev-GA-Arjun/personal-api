@@ -126,7 +126,7 @@ describe('LLM API routes', () => {
 
     expect(nudgeResult.response.status).toBe(200);
     expect(nudge).toMatchObject({ cached: false, window: '09:00' });
-    expect(nudge.text).toContain('Read 1 page');
+    expect(nudge.text).toContain('Example minimum: step outside');
     expect(noteResult.response.status).toBe(201);
     expect(note).toMatchObject({ ok: true, date: '2026-10-12', queued: true });
     expect(readFileSync(join(vaultPath, 'Daily', '2026-10-12.md'), 'utf8')).toContain(noteText);
