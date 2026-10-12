@@ -131,3 +131,27 @@ Options:
 Decision: Created a dedicated module at server/engine/routine.js that handles loading and validating routine.yaml and provides a getCurrentWindow function.
 Why / tradeoff: Separating concerns makes the code more testable and maintainable. The loader validates the YAML structure ensuring data integrity, and the window logic correctly identifies the active check-in window based on system time. Cost: Additional file to maintain, but this is justified by improved code organization.
 Revisit if: Requirements change for per-day window variations or if the validation logic needs to be extended.
+
+## D16: Notification cadence follows the fixed routine windows
+
+Status: accepted
+Context: Block 3 requires reminders at the same check-in times every day so the app can prompt me without needing a browser tab open.
+Options:
+- Use a single long-running timer for all tasks
+- Use one cron job per check-in window
+- Use a poller that checks the clock in a loop
+Decision: Each routine window gets its own cron job using node-cron, scheduled at the same HH:mm as the template.
+Why / tradeoff: This keeps the schedule aligned with the weekly template and makes it easy to test and reason about. Cost: one scheduler per window, but the reliability and clarity are worth it.
+Revisit if: I later allow editable check-in times or per-day variations.
+
+## D17: Startup recovery marks passed windows as no_data automatically
+
+Status: accepted
+Context: The laptop may be asleep, closed, or offline when a window passes, and the app should not permanently mislabel those windows as missed.
+Options:
+- Ignore old windows and wait for next check-in
+- Treat all missed windows as skipped
+- Mark already-passed windows with no log as no_data at startup
+Decision: On server startup, any window from today that has already passed and has no log is created as no_data instead of being treated as a failure.
+Why / tradeoff: This matches the project rule that unlogged windows are not counted as failures, and it keeps the current window prompt clean. Cost: startup gets a little more logic, but it prevents false guilt and stale red flags.
+Revisit if: I later want a stricter missed-task policy for a different routine type.

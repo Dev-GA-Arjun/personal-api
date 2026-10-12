@@ -64,11 +64,11 @@ Lunch and 10 minute dumbbell, 12:30 to 1:30. No screen.
 
 ### Block 3: Notifications and auto-start
 
-- [ ] node-cron at 09:00, 12:00, 15:00, 18:00, 21:00
-- [ ] node-notifier toast with `wait: true`; click opens `http://localhost:PORT/now`
-- [ ] Turn off Focus Assist or allow notifications, then test with a 1 minute cron
-- [ ] On server start or wake, mark windows passed without a log as `no_data` and prompt only for the current window
-- [ ] Task Scheduler entry: at log on, run `node server/index.js` hidden, run on battery
+- [x] node-cron at 09:00, 12:00, 15:00, 18:00, 21:00
+- [x] node-notifier toast with `wait: true`; click opens `http://localhost:PORT/now`
+- [x] Turn off Focus Assist or allow notifications, then test with a 1 minute cron
+- [x] On server start or wake, mark windows passed without a log as `no_data` and prompt only for the current window
+- [x] Task Scheduler entry: at log on, run `node server/index.js` hidden, run on battery
       Done when: a test toast appears and the click opens the page.
 
 ### Block 4: React UI
