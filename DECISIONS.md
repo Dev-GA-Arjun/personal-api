@@ -40,13 +40,13 @@ Options: LLM plans the day; deterministic engine only; engine decides, LLM write
 Decision: the engine decides windows, misses, and consistency. The LLM writes check-in messages and the weekly review.
 Why / tradeoff: Predictable, testable behavior that works when the model is off. Cost: the model cannot freely replan.
 
-## D4: LLM route is desktop-only, no cloud fallback
+## D4: LLM route uses one private desktop-only combo
 
 Status: proposed
-Context: OmniRoute can route to cloud providers, but my notes are private.
-Options: allow cloud fallback; desktop model only
-Decision: desktop model only
-Why / tradeoff: Private notes never leave my machines. Cost: no model when the desktop is off, so I need a queue and a fallback.
+Context: OmniRoute may offer multiple providers, but private text may only reach my desktop model.
+Options: allow a cloud fallback; use one configured private combo and one OmniRoute URL
+Decision: Every model request uses only `OMNIROUTE_URL` and `OMNIROUTE_PRIVATE_COMBO`. That combo must contain only my desktop model; the app has no alternate URL, model, provider, or cloud fallback.
+Why / tradeoff:
 
 ## D5: Offline fallback with a file-based queue
 
@@ -155,3 +155,27 @@ Options:
 Decision: On server startup, any window from today that has already passed and has no log is created as no_data instead of being treated as a failure.
 Why / tradeoff: This matches the project rule that unlogged windows are not counted as failures, and it keeps the current window prompt clean. Cost: startup gets a little more logic, but it prevents false guilt and stale red flags.
 Revisit if: I later want a stricter missed-task policy for a different routine type.
+
+## D20: Pre-generate and cache a week of nudges
+
+Status: proposed
+Context: The desktop model is unavailable for much of the time I use the app.
+Options: generate each nudge on demand; pre-generate the next week and serve cached or template text
+Decision: Queue a week of nudges for generation and cache them by date and window. The model input contains task names and status counts only; a deterministic template is returned on a cache miss.
+Why / tradeoff:
+
+## D21: The model only suggests template changes
+
+Status: proposed
+Context: A small model must not change the deterministic routine or its rules.
+Options: apply model-generated changes automatically; store suggestions for explicit review
+Decision: Store template suggestions as pending. Never apply a suggestion automatically.
+Why / tradeoff:
+
+## D22: Persist model work in a file-based queue
+
+Status: proposed
+Context: The desktop model is often offline, and queued work must survive a server restart.
+Options: keep requests in memory; use a database; persist each job as an ignored JSON file
+Decision: Store idempotent jobs as JSON files under the gitignored `queue/` directory. Process only when the model is available and cap each job at three attempts.
+Why / tradeoff:

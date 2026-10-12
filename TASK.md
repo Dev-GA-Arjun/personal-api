@@ -84,13 +84,14 @@ Keep it plain. Target under 15 seconds per check-in.
 
 ### Block 5: LLM layer
 
-- [ ] OpenAI-compatible client pointing at OmniRoute
-- [ ] Route restricted to the desktop model only, no cloud fallback
-- [ ] Add `/no_think` for qwen3 and request JSON; validate against a schema
-- [ ] File-based queue for requests when the desktop is off
-- [ ] `/review`: weekly summary note written to the vault
-- [ ] Deterministic fallback text when the model is unavailable
-      Done when: review generates with the desktop on and falls back cleanly with it off.
+- [x] OpenAI-compatible client calls only the configured `OMNIROUTE_URL` and `OMNIROUTE_PRIVATE_COMBO`
+- [x] Use no alternate model, URL, or cloud fallback in the app
+- [x] Add `/no_think` for Qwen3, request JSON, and validate output against feature schemas
+- [x] File-based queue persists idempotent jobs across restart and caps retries at three
+- [x] `GET /api/review/week` writes a deterministic weekly summary to `Routine/Reviews/`; queued commentary is added later
+- [x] Return template nudges and deterministic review data while the model is unavailable; save notes before queueing reflection
+- [ ] Verify the configured OmniRoute combo contains only the desktop model and run a real desktop-on request (not run; tests use a fake client)
+      Done when: fake-client tests pass for queueing and offline behavior, and a real desktop-on request has been verified.
 
 Dinner, dumbbell, rest 6:30 to 7:30.
 
