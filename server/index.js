@@ -4,6 +4,7 @@ import { config } from './config.js';
 import { authMiddleware } from './middleware/auth.js';
 import { loadRoutine, getCurrentWindow } from './engine/routine.js';
 import { appendLog, calculateWeeklyConsistency, getWindowStatus, shouldShowMinimumOnly } from './engine/storage.js';
+import { markPassedWindowsAsNoData, scheduleRoutineNotifications, stopRoutineNotifications } from './notifications.js';
 
 const validStatuses = new Set(['done', 'minimum', 'skip', 'no_data']);
 
@@ -141,12 +142,23 @@ export function createApp(runtimeConfig = config) {
 
 export const app = createApp();
 
-export function startServer(port = config.port, host = '127.0.0.1') {
+export function startServer(port = config.port, host = '127.0.0.1', runtimeConfig = config) {
+  const routine = loadRoutine(runtimeConfig.vaultPath);
+  markPassedWindowsAsNoData(runtimeConfig.vaultPath, routine, new Date());
+  scheduleRoutineNotifications(routine, runtimeConfig);
+
   const server = app.listen(port, host, () => {
     console.log(`Routine assistant listening on http://${host}:${port}`);
   });
 
   return server;
+}
+
+export function shutdownServer(server) {
+  if (server && typeof server.close === 'function') {
+    server.close();
+  }
+  stopRoutineNotifications();
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
