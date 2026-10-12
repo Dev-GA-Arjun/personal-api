@@ -3,3 +3,4 @@ node_modules/
 queue/
 vault/
 dist/
+events.jsonl

@@ -61,6 +61,8 @@ export function createFileQueue({
   intervalMs = PROCESS_INTERVAL_MS,
   now = () => new Date(),
   timers = { setInterval, clearInterval },
+  onQueued = () => {},
+  onProcessed = () => {},
   onProcessorError = (error) => console.error('LLM queue processor failed:', error)
 } = {}) {
   if (!availability || typeof availability.isAvailable !== 'function') {
@@ -124,6 +126,7 @@ export function createFileQueue({
       createdAt: now().toISOString()
     };
     writeJob(job);
+    onQueued({ id: job.id, type: job.type, status: job.status });
     return job;
   }
 
@@ -142,14 +145,18 @@ export function createFileQueue({
     for (const pending of getPendingJobs()) {
       const attempt = { ...pending, attempts: pending.attempts + 1 };
       writeJob(attempt);
+      let status;
       try {
         await processJob(attempt);
-        writeJob({ ...attempt, status: 'done' });
+        status = 'done';
         availability.recordSuccess?.();
       } catch {
         availability.recordFailure?.();
-        const status = attempt.attempts >= MAX_ATTEMPTS ? 'failed' : 'pending';
-        writeJob({ ...attempt, status });
+        status = attempt.attempts >= MAX_ATTEMPTS ? 'failed' : 'pending';
+      }
+      writeJob({ ...attempt, status });
+      onProcessed({ id: attempt.id, type: attempt.type, status, attempts: attempt.attempts });
+      if (status !== 'done') {
         processed += 1;
         break;
       }
